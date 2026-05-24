@@ -1,0 +1,10 @@
+{
+  "name": "before-submit",
+  "description": "Pre-submission auditor for academic papers: verify references actually exist (catch AI-hallucinated and retracted citations), check LaTeX formatting/writing/anonymization, and enforce venue-specific rules (page limits, mandatory sections, checklists) for ACL/EMNLP/NAACL/CVPR/ICCV/ECCV/NeurIPS/ICML/ICLR.",
+  "version": "0.1.0",
+  "author": { "name": "thinkwee" },
+  "homepage": "https://github.com/thinkwee/BeforeSubmitSkill",
+  "repository": "https://github.com/thinkwee/BeforeSubmitSkill",
+  "license": "MIT",
+  "keywords": ["latex", "bibtex", "paper", "submission", "references", "arxiv", "conference", "anonymization", "double-blind"]
+}

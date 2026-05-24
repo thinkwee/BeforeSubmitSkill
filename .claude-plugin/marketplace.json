@@ -1,0 +1,14 @@
+{
+  "name": "thinkwee",
+  "owner": {
+    "name": "thinkwee",
+    "url": "https://github.com/thinkwee"
+  },
+  "plugins": [
+    {
+      "name": "before-submit",
+      "source": "./",
+      "description": "Pre-submission auditor for academic papers (references, LaTeX quality, venue rules)."
+    }
+  ]
+}

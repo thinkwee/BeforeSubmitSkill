@@ -1,0 +1,288 @@
+# =============================================================================
+# Venue rules — OFFLINE FALLBACK SNAPSHOT
+# =============================================================================
+# Phase 2 uses this ONLY when the live CfP can't be fetched. Always prefer the
+# live CfP at each venue's `source_url`; treat `snapshot_date`/`edition` as an
+# expiry stamp and tell the user to verify against the official CfP.
+#
+# Compiled 2026-05-24 from official CfPs / author guidelines / LaTeX style files.
+# Page limits are MAIN-TEXT and EXCLUDE references (+ appendices, and for the
+# ACL family also Limitations/Ethics) unless noted. "long/short" = paper track.
+#
+# caption: figure/table => where the \caption must go ("above" | "below").
+#   NOTE: the ACL family wants BOTH below; CV/ML families want figure below +
+#   table above. This OVERRIDES the generic default in latex-checks.md (A1).
+# =============================================================================
+
+snapshot_date: "2026-05-24"
+
+# -----------------------------------------------------------------------------
+# NLP family — ACL / EMNLP / NAACL (all via ACL Rolling Review; shared acl.sty)
+# -----------------------------------------------------------------------------
+acl:
+  name: "ACL"
+  edition: "ACL 2026"
+  snapshot_year: 2026
+  source_url: "https://2026.aclweb.org/calls/main_conference_papers/"
+  policy_source: "https://aclrollingreview.org/cfp"
+  style_source: "https://github.com/acl-org/acl-style-files"
+  field: nlp
+  submission_system: "ACL Rolling Review (ARR)"
+  page_limit_review: {long: 8, short: 4}
+  page_limit_camera: {long: 9, short: 5}   # +1 page after acceptance
+  excluded_from_limit: [references, appendix, limitations, ethics]
+  double_blind: true
+  anonymization:
+    - "No author names/affiliations; avoid identity-revealing self-citation."
+    - "Anonymize repo links (e.g. Anonymous GitHub); no download-tracking hosts (Dropbox)."
+    - "OMIT acknowledgments in the review version (use the [review] option)."
+  mandatory_sections:
+    - {name: "Limitations", note: "REQUIRED — missing = desk reject. Discussion-only (no new methods/results). After Conclusion, before References. Page-limit-exempt."}
+  optional_sections: ["Ethics Statement / Ethical Considerations (encouraged, page-exempt)"]
+  special_deliverables:
+    - "Responsible NLP Checklist — required at submission (bad/missing => desk reject)."
+  style_package: "acl"          # \usepackage[review]{acl}
+  doc_class: "article"          # \documentclass[11pt]{article}
+  style_version: "rolling / no year tag"
+  paper_size: a4
+  columns: 2
+  font_size_pt: 11              # captions 10pt
+  caption: {figure: below, table: below}   # VERIFIED: both below (official ACL style guide)
+  desk_reject_triggers:
+    - "Over page limit; missing Limitations; anonymity/format violations."
+    - "Dual submission / self-plagiarism; bad Responsible NLP Checklist."
+    - "Appendices not in the two-column format; shrinking fonts/spacing."
+  unknowns: ["Whether Limitations must be unnumbered (\\section*) — not explicitly stated."]
+
+emnlp:
+  name: "EMNLP"
+  edition: "EMNLP 2025"
+  snapshot_year: 2025
+  source_url: "https://2025.emnlp.org/calls/main_conference_papers/"
+  policy_source: "https://aclrollingreview.org/cfp"
+  field: nlp
+  submission_system: "ACL Rolling Review (ARR)"
+  page_limit_review: {long: 8, short: 4}
+  page_limit_camera: {long: 9, short: 5}
+  excluded_from_limit: [references, appendix, limitations, ethics]
+  double_blind: true
+  anonymization:
+    - "Same ARR rules as ACL (no names, anonymized links, omit acks in review)."
+  mandatory_sections:
+    - {name: "Limitations", note: "REQUIRED — missing = desk reject. Discussion-only. Page-exempt."}
+  optional_sections: ["Ethics Statement (encouraged, page-exempt)"]
+  special_deliverables:
+    - "Responsible NLP Checklist — for EMNLP 2025 included as a PAPER APPENDIX."
+  style_package: "acl"
+  doc_class: "article"
+  paper_size: a4
+  columns: 2
+  font_size_pt: 11
+  caption: {figure: below, table: below}   # VERIFIED universal ACL rule (this is the user's EMNLP tip)
+  desk_reject_triggers:
+    - "Non-conforming style/format (paper size, margins, font) => rejected without review."
+    - "Over page limit; missing Limitations; anonymity violations; bad checklist."
+  notes: ["Industry track is 6 pages."]
+
+naacl:
+  name: "NAACL"
+  edition: "NAACL 2025 (2026 CfP not yet published as of 2026-05-24 — fell back)"
+  snapshot_year: 2025
+  source_url: "https://2025.naacl.org/calls/papers/"
+  policy_source: "https://aclrollingreview.org/cfp"
+  field: nlp
+  submission_system: "ACL Rolling Review (ARR)"
+  page_limit_review: {long: 8, short: 4}
+  page_limit_camera: {long: 9, short: 5}
+  excluded_from_limit: [references, appendix, limitations, ethics]
+  double_blind: true
+  anonymization: ["Same ARR rules as ACL."]
+  mandatory_sections:
+    - {name: "Limitations", note: "REQUIRED — missing = desk reject. Discussion-only. Page-exempt."}
+  optional_sections: ["Ethics Statement (encouraged, page-exempt)"]
+  special_deliverables: ["Responsible NLP Checklist — required at submission."]
+  style_package: "acl"
+  doc_class: "article"
+  paper_size: a4
+  columns: 2
+  font_size_pt: 11
+  caption: {figure: below, table: below}
+  desk_reject_triggers: ["Over page limit; missing Limitations; anonymity/format; bad checklist."]
+  unknowns: ["NAACL 2026 CfP unconfirmed — expected identical to 2025."]
+
+# -----------------------------------------------------------------------------
+# CV family — CVPR / ICCV (CVF, double-column) ; ECCV (Springer LNCS, 1-column)
+# -----------------------------------------------------------------------------
+cvpr:
+  name: "CVPR"
+  edition: "CVPR 2026"
+  snapshot_year: 2026
+  source_url: "https://cvpr.thecvf.com/Conferences/2026/AuthorGuidelines"
+  author_kit: "https://github.com/cvpr-org/author-kit"
+  field: cv
+  submission_system: "OpenReview"
+  page_limit_review: 8           # excludes references
+  page_limit_camera: 8           # no extra content page granted
+  excluded_from_limit: [references]   # appendix => separate supplementary
+  double_blind: true
+  forbid_identifying_urls: true
+  forbid_acks_in_review: true
+  anonymization:
+    - "No identifying info in acknowledgments (no co-workers/grant IDs)."
+    - "Do NOT link to sites that identify authors; anonymize supplementary."
+    - "Concurrent own submissions: include anonymized versions in supp, cite them, argue difference."
+  arxiv_policy: "Prior arXiv posting allowed (not a publication). Dual submission (>=20% overlap) forbidden during review. Media embargo until acceptance."
+  mandatory_sections: []
+  style_package: "cvpr"
+  paper_size: letter            # A4 also supported
+  columns: 2
+  font_size_pt: 10              # Times; figure captions 9pt
+  caption: {figure: below, table: above}
+  supplementary: "Optional, separate file, later deadline; reviewers not obligated to read."
+  rebuttal: "1-page PDF (template); no external links; longer => not reviewed."
+  desk_reject_triggers:
+    - "Not anonymized; not using the official template; >8 pages (excl refs)."
+    - "Incomplete OpenReview profile; plagiarism; dual submission; COI errors."
+    - "Prompt-injection in PDF; citing non-existent material; obvious factual errors."
+  unknowns: ["Exact cvpr.sty version string (in author kit)."]
+
+iccv:
+  name: "ICCV"
+  edition: "ICCV 2025 (biennial, odd years; latest as of 2026-05)"
+  snapshot_year: 2025
+  source_url: "https://iccv.thecvf.com/Conferences/2025/AuthorGuidelines"
+  field: cv
+  submission_system: "OpenReview"
+  page_limit_review: 8
+  page_limit_camera: 8
+  excluded_from_limit: [references]
+  double_blind: true
+  forbid_identifying_urls: true
+  forbid_acks_in_review: true
+  anonymization:
+    - "No identifying info in acks; no author-identifying links; anonymize supplementary."
+    - "Concurrent own submissions: anonymized copies in supp + cite + argue difference."
+  arxiv_policy: "Prior arXiv allowed; must cite inspiring arXiv work. Dual submission forbidden; peer-reviewed workshop papers >4pp count as publications."
+  mandatory_sections: []
+  style_package: "iccv"
+  paper_size: letter
+  columns: 2
+  font_size_pt: 10
+  caption: {figure: below, table: above}
+  rebuttal: "1-page PDF (template); no external links."
+  desk_reject_triggers:
+    - "Not anonymized; not using template; >8 pages (excl refs); citing non-existent material."
+
+eccv:
+  name: "ECCV"
+  edition: "ECCV 2026"
+  snapshot_year: 2026
+  source_url: "https://eccv.ecva.net/Conferences/2026/SubmissionPolicies"
+  field: cv
+  submission_system: "OpenReview"
+  page_limit_review: 14          # excludes references; Springer LNCS
+  page_limit_camera: 14
+  excluded_from_limit: [references]
+  appendix_in_main: false        # NO appendices in the main submission; use supplementary
+  double_blind: true
+  forbid_identifying_urls: true
+  anonymization:
+    - "No self-identifying info; no author-identifying links in paper or supp."
+    - "Concurrent own submissions: anonymized copies in supp + cite + argue difference."
+  arxiv_policy: "Prior arXiv allowed (need not be cited). Dual submission forbidden. STRICT media/social embargo until final decision — identifying a paper as an ECCV submission => summary reject."
+  mandatory_sections: []         # LNCS requires Abstract, Keywords, line numbering, numbered eqns
+  style_package: ""              # LNCS is a class, not a usepackage
+  doc_class: "llncs"             # template CHANGED since ECCV 2024 — use the 2026 kit
+  paper_size: a4
+  columns: 1                     # SINGLE column (unlike CVPR/ICCV)
+  font_size_pt: 10
+  caption: {figure: below, table: above}
+  desk_reject_triggers:
+    - "Not anonymized; not using template; >14 pages (excl refs); changing the template font."
+    - "Appendices in the main submission; incomplete OpenReview profiles; prompt injection."
+
+# -----------------------------------------------------------------------------
+# ML family — NeurIPS / ICML / ICLR (all OpenReview, abstract-deadline-first)
+# -----------------------------------------------------------------------------
+neurips:
+  name: "NeurIPS"
+  edition: "NeurIPS 2026"
+  snapshot_year: 2026
+  source_url: "https://neurips.cc/Conferences/2026/CallForPapers"
+  checklist_guide: "https://neurips.cc/public/guides/PaperChecklist"
+  field: ml
+  submission_system: "OpenReview (abstract deadline first)"
+  page_limit_review: 9
+  page_limit_camera: 10          # +1 page on acceptance
+  excluded_from_limit: [references, appendix, checklist]
+  double_blind: true
+  mandatory_sections: []         # no standalone Broader Impact/Ethics section required
+  special_deliverables:
+    - "NeurIPS Paper Checklist — MANDATORY; missing => DESK REJECT. After references/appendix. Page-exempt. 16 items."
+    - "Code/data submitted SEPARATELY as a ZIP (<=100MB), not as a PDF appendix."
+    - "All author names by the ABSTRACT deadline; all authors need an OpenReview profile."
+  style_package: "neurips_2026" # \usepackage{neurips_2026}; [final] for camera-ready, [preprint] for arXiv
+  doc_class: "article"
+  paper_size: letter
+  columns: 1
+  font_size_pt: 10
+  caption: {figure: below, table: above}
+  desk_reject_triggers:
+    - "Over 9-page main text; shrinking margins/fonts or editing the style files."
+    - "Missing Paper Checklist; deanonymization; incomplete OpenReview profile."
+
+icml:
+  name: "ICML"
+  edition: "ICML 2026"
+  snapshot_year: 2026
+  source_url: "https://icml.cc/Conferences/2026/CallForPapers"
+  author_instructions: "https://icml.cc/Conferences/2026/AuthorInstructions"
+  field: ml
+  submission_system: "OpenReview (abstract first)"
+  page_limit_review: 8           # main body
+  page_limit_camera: 9           # +1 on acceptance
+  excluded_from_limit: [references, impact_statement, appendix]
+  double_blind: true
+  mandatory_sections:
+    - {name: "Impact Statement", note: "REQUIRED at submission (main track). Unnumbered, co-located with Acknowledgements, before References. Page-exempt. Boilerplate sentence acceptable."}
+  mandatory_camera_sections:
+    - {name: "Lay Summary", note: "Required at CAMERA-READY only (entered in OpenReview)."}
+  special_deliverables:
+    - "Type-1 fonts MANDATORY — avoid Type-3; verify with `pdffonts`. Prefer pdflatex. (Only checkable from the compiled PDF — see compile-checks.md.)"
+    - "Conflict-of-Interest Disclosure paragraph for accepted papers with substantive conflicts."
+  style_package: "icml2026"     # \usepackage{icml2026}; [accepted] for camera-ready
+  paper_size: letter
+  columns: 2
+  font_size_pt: 10              # Times
+  caption: {figure: below, table: above}
+  desk_reject_triggers:
+    - "Main body > 8 pages => automatically rejected; not anonymized => rejected."
+    - "Non-conforming formatting / altered template / compressed spacing; prompt injection."
+
+iclr:
+  name: "ICLR"
+  edition: "ICLR 2026"
+  snapshot_year: 2026
+  source_url: "https://iclr.cc/Conferences/2026/CallForPapers"
+  author_guide: "https://iclr.cc/Conferences/2026/AuthorGuide"
+  field: ml
+  submission_system: "OpenReview (abstract first)"
+  page_limit_review: 9           # STRICT upper limit, strictly enforced
+  page_limit_camera: 10
+  min_main_pages: 0              # NOTE: the old "11th page / 8-page" desk-reject rule is OBSOLETE
+  excluded_from_limit: [references, appendix, ethics, reproducibility]
+  double_blind: true
+  mandatory_sections: []
+  optional_sections:
+    - "Reproducibility Statement (encouraged; paragraph before refs; page-exempt)."
+    - "Ethics Statement (optional; <=1 page; page-exempt; must ack ICLR Code of Ethics)."
+  style_package: "iclr2026_conference"   # from iclr2026.zip; ships natbib + iclr2026_conference.bst
+  doc_class: "article"
+  paper_size: letter
+  columns: 1
+  font_size_pt: 10
+  caption: {figure: below, table: above}
+  desk_reject_triggers:
+    - "Main text beyond 9 pages => desk reject (strictly enforced)."
+    - "Author identity revealed in main text OR supplementary => desk reject."
+  unknowns: ["Legacy '11th-page desk reject' no longer applies; current rule is strict 9-page cap."]
