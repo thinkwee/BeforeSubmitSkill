@@ -25,6 +25,14 @@ checked and what you couldn't.
 
 - **Detect, never assume.** Probe the environment at runtime (files, TeX engine,
   network). The user may be on any OS, with any/no TeX install, online or off.
+- **Anchor to the real current date; never trust your training cutoff for
+  time-sensitive facts.** Establish today's date from the system clock at the
+  start (Phase 0), then treat **every** date-dependent judgment — is this CfP/page
+  limit current for the venue+year, has this preprint been published since, is
+  this paper retracted, is an arXiv id "brand-new and not yet indexed" — as
+  something you must **confirm with a live web search**, not recall from memory.
+  Your internal knowledge is stale by construction; "I don't remember a published
+  version" is never evidence one doesn't exist.
 - **Degrade gracefully.** Every layer is independent. If TeX isn't installed,
   skip only the compile-based checks and say so. If offline, skip only the
   network checks and say so. Never fake a result you didn't actually run.
@@ -79,7 +87,14 @@ Set `SKILL_DIR` to that path once, then invoke bundled scripts by absolute path 
 
 ## Phase 0 — Scope & setup (ASK the user, then detect)
 
-Ask these up front (one batched set of questions), because the answers change
+**First, establish today's date.** Run `date "+%Y-%m-%d"` and treat its output as
+the authoritative "now" for the whole run. State it back to the user
+("Running this check as of <date>."). This date — not your training cutoff — is
+the reference point for every recency judgment downstream (venue+year currency,
+preprint-vs-published, retractions, "not yet indexed"). Carry it forward and hand
+it to every subagent in Phase 2.5.
+
+Then ask these up front (one batched set of questions), because the answers change
 which checks apply:
 
 1. **Review or camera-ready?** (double-blind anonymization checks only apply to
@@ -139,9 +154,10 @@ launch them in a **single message with multiple `Agent` tool calls** (general-
 purpose subagents) so they execute concurrently.
 
 Give every subagent: the resolved **`SKILL_DIR`** (it starts fresh — it must read
-its own reference file by absolute path), the assembled `.tex`/`.bib` lists, the
-Phase-0 answers (version, fixing policy), the Phase-2 venue rules, and its
-fragment path. Each subagent **writes only to its own fragment** in
+its own reference file by absolute path), **today's date** (from the Phase-0
+`date` call — they start fresh and cannot trust their own training cutoff for any
+recency check), the assembled `.tex`/`.bib` lists, the Phase-0 answers (version,
+fixing policy), the Phase-2 venue rules, and its fragment path. Each subagent **writes only to its own fragment** in
 `before-submit-parts/` (using the `reference/report-format.md` bullet format) and
 returns a short summary to you.
 

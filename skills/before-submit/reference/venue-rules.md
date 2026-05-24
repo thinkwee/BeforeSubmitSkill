@@ -10,6 +10,11 @@ required section can mean desk rejection.
    Look it up in `reference/venues.yaml` to get its `source_url` and the last
    known `snapshot_year`.
 
+   Interpret the year against **today's date** (established in Phase 0), not your
+   training cutoff: a venue's rules change every edition, and the edition the user
+   is targeting may be one your memory never saw. Resolve rules for the *exact*
+   year the user gave; never substitute "the latest one I know of."
+
 2. **Try live first.** Fetch the official CfP / author guidelines:
    - Use the `source_url` from the snapshot, and/or web-search
      `"<venue> <year> call for papers"` and `"<venue> <year> author guidelines

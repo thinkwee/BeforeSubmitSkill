@@ -46,6 +46,11 @@ Retraction Watch). Flag **retracted / withdrawn / expression-of-concern** papers
 with a DOI; for the rest, a quick web search of the title + "retracted" is a
 cheap sanity check on key references.
 
+**Retraction status is inherently time-sensitive — verify it live, never from
+memory.** A paper that was in good standing as of your training cutoff may have
+been retracted since; the current date (Phase 0) is what matters, not what you
+recall. Run the live check; never assert "not retracted" from internal knowledge.
+
 ## 3. Usage analysis — severity: WARNING (unused) / ERROR (missing)
 
 - **Unused** `.bib` entries (present but never `\cite`d) → WARNING; offer to emit
@@ -88,6 +93,12 @@ where a published one exists reads as careless and loses the venue signal.
   content) before recommending. For preprints with **no** `published_alt`, still
   do a quick check (DBLP / Google Scholar / the venue's proceedings) for an
   obviously-published key reference — `journal_ref` and indexes lag.
+- **A preprint may have been published *after* your training cutoff** — so "I
+  don't recall a published version" proves nothing. Decide solely from the live
+  search and `journal_ref` as of today's date (Phase 0), never from memory.
+  Likewise, whether an arXiv id is "brand-new and not yet indexed" (a legitimate
+  reason verify_refs returns `unable`, see §1) is a judgment about *recency* —
+  measure it against today's date, not your sense of what's recent.
 - Report each as: `cite <Venue Year> instead of arXiv:<id>` with the corrected
   `@inproceedings`/`@article` skeleton when you can produce it. **ask-first** (it
   rewrites a bib entry). For workshop/non-archival venues, leaving the arXiv cite
