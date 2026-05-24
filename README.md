@@ -1,4 +1,10 @@
+<div align="center">
+  <img src="logo.png" alt="banner Logo" width="800">
+</div>
+
 # before-submit
+
+[中文说明](README.zh-CN.md)
 
 **A Claude Code skill that audits your academic paper before you submit it.**
 
