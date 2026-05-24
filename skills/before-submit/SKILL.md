@@ -5,13 +5,16 @@ description: >-
   BibTeX/biblatex). Use when the user is preparing to submit a paper and wants
   to verify: bibliography correctness (references actually exist, aren't
   hallucinated, aren't retracted, metadata matches), LaTeX formatting & writing
-  quality, double-blind / anonymization compliance, and venue-specific template
-  rules (page limits, mandatory sections, checklists, style files). Triggers:
-  "check my paper before I submit", "before submit", "is my paper ready for
-  ACL/EMNLP/NeurIPS/CVPR/ICLR/...", "verify my references / .bib", "find fake
-  or retracted citations", "double-blind / anonymization check", "did I follow
-  the <venue> template". Works on a single .tex/.bib pair OR a whole multi-file
-  LaTeX project directory.
+  quality, internal faithfulness (numbers in the text match the tables, figures
+  match what the prose claims about them, no broken/empty citations or
+  cross-references), double-blind / anonymization compliance, and venue-specific
+  template rules (page limits, mandatory sections, checklists, style files).
+  Triggers: "check my paper before I submit", "before submit", "is my paper ready
+  for ACL/EMNLP/NeurIPS/CVPR/ICLR/...", "verify my references / .bib", "find fake
+  or retracted citations", "do my numbers match the tables / figures", "check
+  faithfulness / internal consistency", "double-blind / anonymization check",
+  "did I follow the <venue> template". Works on a single .tex/.bib pair OR a whole
+  multi-file LaTeX project directory.
 ---
 
 # Before-Submit: Paper Pre-Submission Auditor
@@ -166,6 +169,7 @@ returns a short summary to you.
 | **Bibliography auditor** | `bib.md` | Phase 3 | `reference/bib-checks.md` |
 | **LaTeX & writing auditor** | `latex.md` | Phase 4 §A–C, F (incl. grammar) | `reference/latex-checks.md` |
 | **Compliance auditor** | `compliance.md` | Phase 4 §D–E (anonymization + venue template) | `reference/latex-checks.md` |
+| **Faithfulness auditor** | `faithfulness.md` | Phase 4.5 — text↔table numbers, **reads figures**, cross-section consistency | `reference/faithfulness-checks.md` |
 | **Compile auditor** | `compile.md` | Phase 5 — **only dispatched if** Phase 0 secured a `pdflatex` toolchain | `reference/compile-checks.md` |
 
 Notes:
@@ -217,6 +221,27 @@ venue overrides from Phase 2.** Split across two team members:
   venue-template conformance (mandatory sections, `\section*` for non-page-counted
   sections, style file, page-size, double-blind, special deliverables).
 
+## Phase 4.5 — Internal faithfulness / consistency (Faithfulness auditor)
+
+Read `reference/faithfulness-checks.md`. This member checks the paper **against
+itself** — the integrity issues that survive a clean compile and only a careful
+reviewer catches:
+- **Numbers in the prose match the tables** (and the abstract's headline matches
+  the results), with rounding/subset/metric tolerances so it doesn't cry wolf;
+- **Tables are self-consistent** ("best" is actually bolded, totals add up,
+  ablation deltas are right);
+- **Figures match what the text says about them** — this auditor **reads the
+  figure files with the Read tool** (PNG/JPG directly, single-page PDF via
+  `pages="1"`; in a pdflatex project graphics are PDF/PNG/JPG, so they're
+  openable) and compares the plotted trend/axes/legend to the prose claim,
+  degrading gracefully (EPS or unreadable plots → note "not verified", never
+  guess);
+- **The same quantity is consistent across sections**, and claims point to the
+  right float/appendix.
+Every fix here is **ask-first** (you can't know which side holds the typo —
+surface both `file:line`s). Note unreadable figures / ambiguous matches for the
+Phase-6 "what I checked / skipped" section.
+
 ## Phase 5 — Compile & page count (Compile auditor — pdflatex only, or skipped)
 
 Read `reference/compile-checks.md`. Run this member **only if Phase 0 confirmed a
@@ -262,6 +287,8 @@ stylistic: ask first.** Never modify files the user didn't agree to.
 - `reference/venues.yaml` — offline snapshot of per-venue rules (Phase 2).
 - `reference/bib-checks.md` — bibliography check catalog (Phase 3).
 - `reference/latex-checks.md` — LaTeX check catalog with patterns + fixes (Phase 4).
+- `reference/faithfulness-checks.md` — internal-consistency catalog: text↔table
+  numbers, figure reading, cross-section consistency (Phase 4.5).
 - `reference/compile-checks.md` — toolchain detection, compile, log parsing,
   install options (Phase 5).
 - `reference/report-format.md` — running-report markdown template (all phases).

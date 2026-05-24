@@ -9,6 +9,27 @@ it flags, how to detect it, severity, the fix, and whether the fix is
 **Apply venue overrides from Phase 2 before reporting** — a fetched venue rule
 beats any default here (especially caption placement and `\section*` usage).
 
+## How to run these — two tiers, don't grep the semantic ones
+
+The checks split into two kinds and the difference is the whole game:
+
+- **Mechanical** — a regex can *locate* the candidate; you just confirm the
+  context. Citation `~`, `et al`→`et al.`, `50 %`→`50%`, number ranges, unescaped
+  `&`, mojibake/smart-quotes, `\label`/`\ref` bookkeeping. Pattern-match to find,
+  then rule out false positives (math/tabular/verbatim/`%`-comment) before
+  reporting.
+- **Semantic** — a regex *cannot* judge it; you must **read the assembled prose
+  like a reviewer** and decide. Grammar & mechanics (§B0), sentence quality
+  (§B2), terminology consistency and whether two spellings are really the same
+  term (§B3), whether an acronym is genuinely used-before-defined / defined
+  inconsistently (§C1), whether a citation actually fits the claim (§C3), and the
+  reference-noun sense in §A5. For these, **grep will both miss real issues and
+  invent false ones** — regex is at most a hint for *where* to look, never the
+  verdict.
+
+So when a check below says "Detect … pattern", that's the cheap first pass for a
+mechanical check; for a semantic one the real work is your reading.
+
 ---
 
 ## A. Format
@@ -46,6 +67,19 @@ beats any default here (especially caption placement and `\section*` usage).
   lacks trailing punctuation → "may need punctuation". **ask-first**.
 - Mixed numbered/unnumbered equations (>20% minority of >3 total) → INFO.
 - Mixed inline-math delimiters (`$...$` vs `\(...\)`) → INFO. **ask-first**.
+
+### A5. Reference nouns — severity: WARNING (lowercase before a number) / INFO (abbrev style)
+Partly **semantic** — read for sense, only flag hand-written nouns; let
+`\cref`/`\autoref`/`\Cref` (they auto-generate the noun) off the hook.
+- **Capitalize when naming a specific float**: "in Figure 3", "see Section 4",
+  "Table 2", "Equation 5" take a capital when followed by a number — lowercase
+  "figure 3"/"section 4" naming a numbered float is wrong (WARNING). Skip generic
+  uses with no number ("the figure shows…"). **safe-auto** once flagged.
+- **Consistent abbreviation**: pick one of `Figure`/`Fig.`, `Section`/`Sec.`,
+  `Equation`/`Eq.`, `Appendix`/`App.` (Table is rarely abbreviated) and use it
+  throughout the doc; mixing reads as careless (INFO). Respect any venue style
+  (some require spelled-out at a sentence start). **ask-first** (abbrev style is a
+  preference).
 
 ---
 
@@ -114,11 +148,24 @@ patterns kindly and concretely.
   acronyms (GPU, NLP, LLM, API, …) and the user's glossary.
 - Detect "Full Name (ACRONYM)" / "(ACRONYM; Full Name)" definitions (allow
   `~` and `\textbf{}`); flag used-before-defined.
-- Fix: define on first use. **ask-first**.
+- **Defined but never reused** — a "Full Name (ACRONYM)" introduced and then the
+  acronym never appears again → INFO (the parenthetical was pointless; use it or
+  drop it).
+- **Redefined** — the full form spelled out with the acronym a second time later
+  → INFO (define once, on first use).
+- **Defined inconsistently** — the same acronym mapped to two different full forms
+  (or one full form abbreviated two ways) → WARNING.
+- These are **read-and-judge**, not pure regex: confirm a parenthetical is a real
+  expansion (initials line up) and not a coincidence before flagging.
+- Fix: define on first use / unify. **ask-first**.
 
 ### C2. Numbers — severity: WARNING / INFO
 - Space before percent: `50 %` → `50%` (WARNING). **safe-auto**.
 - Mixed `%` and the word "percent" (INFO). **ask-first**.
+- **Ranges use an en-dash, not a hyphen**: `10-20`, "pages 3-7", "2019-2021" →
+  `10--20`, `3--7`, `2019--2021` (WARNING). Only for clear numeric ranges outside
+  math/tabular, and not where the `-` is a minus sign or part of a compound.
+  **safe-auto** for unambiguous numeric ranges.
 - Skip math/tabular/caption/ref contexts.
 
 ### C3. Citation quality — severity: WARNING / INFO
@@ -176,3 +223,9 @@ patterns kindly and concretely.
 - Detect literal smart-quote / nbsp bytes outside verbatim. Fix: replace with
   LaTeX equivalents (`` `` '' ``, `--`/`---`, `~`, normal space) — **safe-auto**
   for clear mojibake, but show the user the list first.
+- **ASCII straight quotes used as text quotes**: `"word"` in the source renders as
+  `”word”` (both closing) under pdflatex — it should be `` ``word'' `` (backtick
+  opening, apostrophes closing); likewise `'word'` → `` `word' ``. Flag a straight
+  `"` or a leading `'` used as a quotation mark outside verbatim/math/code
+  (WARNING). **safe-auto** for clear opening/closing pairs; **ask-first** when
+  ambiguous (it may be a prime/inch mark, an apostrophe, or part of a code listing).

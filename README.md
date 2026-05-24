@@ -38,10 +38,27 @@ decides.
 **LaTeX quality**
 - Caption placement (venue-aware), cross-references, citation formatting,
   equations, **AI-text artifacts**, **grammar & mechanics**, weak/hedging
-  writing, terminology consistency, acronym definitions, number formatting,
-  encoding/mojibake.
+  writing, terminology consistency, **acronym hygiene** (defined-before-use,
+  not redefined or defined inconsistently), **reference-noun consistency**
+  ("Figure 3" vs "fig. 3", `Fig.`/`Sec.`/`Eq.` style), number formatting and
+  en-dash ranges, straight-vs-curly quotes, encoding/mojibake.
+- The writing checks are done by the **agent reading the assembled prose** like a
+  reviewer (no hardcoded linter) — grep only locates the mechanical ones; the
+  semantic calls (grammar, terminology, acronym sense, citation fit) are judged.
 - **Anonymization** for double-blind: author leaks, identifying URLs,
   acknowledgments, self-revealing phrasing — checked only for the review version.
+
+**Internal faithfulness** (the paper checked against itself)
+- 🔢 **Numbers match the tables** — numeric claims in the prose/abstract are
+  cross-checked against the actual `tabular` cells (with rounding/subset/metric
+  tolerances so it doesn't cry wolf); a wrong *headline* number is escalated.
+- 📊 **Tables are self-consistent** — the bolded "best" really is the best,
+  totals add up, ablation deltas are right.
+- 🖼️ **Figures match the prose** — it **reads the figure files** (PNG/JPG/PDF)
+  and compares the plotted trend/axes/legend to what the text claims about them;
+  unreadable plots (e.g. EPS) are noted, never guessed.
+- 🔗 **Cross-section consistency** — the same metric reported the same value
+  everywhere, and claims point at the right table/figure/appendix.
 
 **Venue compliance** (ACL · EMNLP · NAACL · CVPR · ICCV · ECCV · NeurIPS · ICML · ICLR)
 - Page limits, mandatory sections (e.g. ACL **Limitations**), required
@@ -60,8 +77,8 @@ different engine (e.g. Tectonic/XeTeX), since that would give a misleading page
 count vs Overleaf.
 
 The checks run as a **parallel agent team** (bibliography · LaTeX & writing ·
-compliance · compile), each writing its own report fragment, which are then
-merged. Findings land in **`before-submit-report.md`**, grouped into 🔴 desk-reject
+compliance · faithfulness · compile), each writing its own report fragment, which
+are then merged. Findings land in **`before-submit-report.md`**, grouped into 🔴 desk-reject
 risk · 🟠 reviewers will frown · 🔵 optional polish — and you can render a minimal,
 self-contained **HTML** view of it.
 
@@ -134,7 +151,7 @@ skills/before-submit/
 ├── reference/          # loaded on demand, per phase
 │   ├── venues.yaml     # offline venue-rules snapshot (live CfP wins when online)
 │   ├── venue-rules.md  ·  bib-checks.md  ·  latex-checks.md
-│   ├── compile-checks.md  ·  report-format.md
+│   ├── faithfulness-checks.md  ·  compile-checks.md  ·  report-format.md
 └── scripts/            # stdlib-only, run anywhere with python3
     ├── assemble_project.py   # find main .tex, follow includes, map .bib
     ├── verify_refs.py        # parallel multi-source reference verifier

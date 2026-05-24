@@ -3,7 +3,7 @@
 The audit runs as a parallel team, so findings land in **fragment files** first,
 then get merged:
 - Each team member appends findings to its **own** fragment as it confirms them —
-  `before-submit-parts/{bib,latex,compliance,compile}.md` — using the
+  `before-submit-parts/{bib,latex,compliance,faithfulness,compile}.md` — using the
   one-finding-per-bullet format below (with severity tags). Appending as-you-go
   keeps each worker's progress durable.
 - The orchestrator **merges** the fragments into the single
