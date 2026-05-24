@@ -10,11 +10,15 @@ references; this confirms each one is real and its metadata is correct.
 
 1. Run `scripts/verify_refs.py <bib1> [<bib2> ...] --json` (see its `--help`).
    It does fast, parallel, multi-source lookup and returns, per entry, one of:
-   `verified` / `mismatch` / `unable`, plus the matched title/authors/year and
-   which sources corroborated.
-2. For every entry the script marks **`unable`** (not found in any indexed
-   source) or **`mismatch`** (found something, but it disagrees), **use your own
-   web search** to adjudicate:
+   `verified` / `mismatch` / `unable`, the matched title/authors/year, which
+   sources corroborated, and (for preprints) a `published_alt` candidate.
+   **Treat this as triage, not the verdict** — it is a fast filter that tells you
+   *which* entries need your attention, not the final call on them.
+2. For **every flagged entry** — `unable` (not found in any indexed source),
+   `mismatch` (found something that disagrees), **or** one carrying a
+   `published_alt` — **run a live web search yourself to confirm or refute it**
+   before writing anything to the report. The machine flag is a lead; your
+   web-confirmed judgment is what ships. To adjudicate:
    - Search the exact title (quoted) + first author. Confirm it exists, and
      whether the venue/year/authors in the `.bib` are right.
    - `unable` is common and *legitimate* for: brand-new arXiv preprints not yet
@@ -68,11 +72,32 @@ Missing fields make BibTeX render broken/incomplete entries. Check by type:
 - `@misc` → at least title + (author or howpublished/url + year)
 Also flag entries missing `year` entirely, or with a non-numeric year.
 
-## 6. Preprint ratio — severity: INFO
+## 6. Cite the published version, not arXiv — severity: WARNING
+
+**Policy: if a paper has a peer-reviewed version (conference/journal), cite that,
+not the arXiv preprint.** Reviewers expect the version of record; an arXiv cite
+where a published one exists reads as careless and loses the venue signal.
+
+- `verify_refs.py` flags preprint entries (`bib_is_arxiv: true`) and, when it
+  finds a matching non-preprint record, fills `published_alt` with the venue +
+  year + source (it also reads the arXiv `journal_ref`, which arXiv sets once a
+  preprint is formally published). The script already guards against title
+  collisions (same/similar title used by a survey or book chapter) via author
+  overlap + publication-type filtering — but it can still miss or mis-tag.
+- **Always web-confirm** the candidate is the *same paper* (same authors, same
+  content) before recommending. For preprints with **no** `published_alt`, still
+  do a quick check (DBLP / Google Scholar / the venue's proceedings) for an
+  obviously-published key reference — `journal_ref` and indexes lag.
+- Report each as: `cite <Venue Year> instead of arXiv:<id>` with the corrected
+  `@inproceedings`/`@article` skeleton when you can produce it. **ask-first** (it
+  rewrites a bib entry). For workshop/non-archival venues, leaving the arXiv cite
+  is fine — note the choice rather than forcing it.
+
+## 6b. Preprint ratio — severity: INFO
 
 Detect arXiv/bioRxiv/SSRN/preprint entries. If they exceed ~50% of *cited*
-references, note it (reviewers may read it as thin grounding) and, where a
-published version exists (arXiv `journal-ref`/DOI), suggest citing that instead.
+references, note it (reviewers may read it as thin grounding); combined with §6,
+this usually means several should move to their published versions.
 
 ## 7. URL liveness (optional, network) — severity: WARNING
 

@@ -13,6 +13,9 @@ hallucinated / wrong references. Strategy:
   * Early-exit once one high-confidence match has a corroborator; hard 18s/entry.
   * Per-source circuit breaker: 2 consecutive failures -> skip that source.
   * arXiv-shaped DOIs (10.48550/arXiv.*) are NOT queried on CrossRef/OpenAlex.
+  * arXiv/preprint entries: keeps gathering past corroboration to surface a
+    PUBLISHED version (proceedings/journal, or arXiv journal_ref) so the agent
+    can recommend citing the version of record instead of the preprint.
   * Surgical networking: short timeout, no retries on failure (fail fast -> let a
     parallel source answer / trip the breaker). Optional on-disk cache (24h).
 
@@ -313,7 +316,9 @@ def _cr_pack(m):
         if dp and dp[0] and dp[0][0]:
             y = str(dp[0][0])
             break
-    return {"source": "crossref", "title": t, "authors": auth, "year": y, "raw": m}
+    venue = (m.get("container-title") or [""])[0]
+    return {"source": "crossref", "title": t, "authors": auth, "year": y,
+            "venue": venue, "pubtype": m.get("type", ""), "raw": m}
 
 
 def f_openalex_doi(doi):
@@ -333,8 +338,10 @@ def _oa_mail():
 
 def _oa_pack(w):
     auth = [(a.get("author") or {}).get("display_name", "") for a in w.get("authorships", [])]
+    src = ((w.get("primary_location") or {}).get("source") or {})
     return {"source": "openalex", "title": w.get("title") or w.get("display_name") or "",
-            "authors": auth, "year": str(w.get("publication_year") or "")}
+            "authors": auth, "year": str(w.get("publication_year") or ""),
+            "venue": src.get("display_name", "") or "", "pubtype": w.get("type", "")}
 
 
 def _s2_headers():
@@ -342,21 +349,22 @@ def _s2_headers():
 
 
 def f_s2_id(idstr):
-    d = get_json(f"https://api.semanticscholar.org/graph/v1/paper/{idstr}?fields=title,authors,year",
+    d = get_json(f"https://api.semanticscholar.org/graph/v1/paper/{idstr}?fields=title,authors,year,venue,publicationTypes",
                  "s2", _s2_headers())
     return _s2_pack(d) if d else None
 
 
 def f_s2_title(title):
     d = get_json("https://api.semanticscholar.org/graph/v1/paper/search?query="
-                 + urllib.parse.quote(title) + "&fields=title,authors,year&limit=5", "s2", _s2_headers())
+                 + urllib.parse.quote(title) + "&fields=title,authors,year,venue,publicationTypes&limit=5", "s2", _s2_headers())
     return [_s2_pack(x) for x in (d or {}).get("data", [])]
 
 
 def _s2_pack(d):
     return {"source": "s2", "title": d.get("title") or "",
             "authors": [a.get("name", "") for a in d.get("authors", [])],
-            "year": str(d.get("year") or "")}
+            "year": str(d.get("year") or ""), "venue": d.get("venue", "") or "",
+            "pubtype": " ".join(d.get("publicationTypes") or [])}
 
 
 def f_dblp_title(title):
@@ -371,7 +379,8 @@ def f_dblp_title(title):
             a = [a]
         names = [(x.get("text") if isinstance(x, dict) else str(x)) for x in a]
         out.append({"source": "dblp", "title": info.get("title", ""),
-                    "authors": names, "year": str(info.get("year") or "")})
+                    "authors": names, "year": str(info.get("year") or ""),
+                    "venue": info.get("venue", "") or "", "pubtype": info.get("type", "")})
     return out
 
 
@@ -387,7 +396,13 @@ def _arxiv_parse(xml_text):
         y = (e.findtext("a:published", default="", namespaces=ns) or "")[:4]
         names = [ (a.findtext("a:name", default="", namespaces=ns) or "")
                   for a in e.findall("a:author", ns)]
-        out.append({"source": "arxiv", "title": t, "authors": names, "year": y})
+        # arXiv's <arxiv:journal_ref> is set once a preprint is formally published.
+        jref = ""
+        for child in e:
+            if child.tag.endswith("journal_ref"):
+                jref = (child.text or "").strip()
+        out.append({"source": "arxiv", "title": t, "authors": names, "year": y,
+                    "venue": "arXiv", "pubtype": "preprint", "journal_ref": jref})
     return out
 
 
@@ -424,11 +439,58 @@ def score(bib, cand):
     return ts, as_, yok, conf
 
 
+_PREPRINT_VENUE = re.compile(r"\b(arxiv|corr|biorxiv|medrxiv|ssrn|preprint|openreview|research\s*square)\b", re.I)
+_PREPRINT_TYPE = re.compile(r"posted-content|preprint|informal", re.I)
+# Types that are NOT a version-of-record for a cited preprint — surveys, books,
+# and textbooks often reuse a famous title and would be false positives.
+_NOT_VOR_TYPE = re.compile(r"book|chapter|monograph|reference|dataset|component|standard|other|review", re.I)
+
+
+def bib_is_arxiv(e):
+    """True if the .bib entry points at a preprint server (arXiv et al.)."""
+    if arxiv_id_of(e):
+        return True
+    blob = " ".join(e.get(f, "") for f in
+                    ("journal", "note", "howpublished", "eprint", "archiveprefix", "publisher")).lower()
+    return bool(re.search(r"arxiv|corr|biorxiv|ssrn|preprint", blob))
+
+
+def published_alt(cands, bib_title, bib_authors):
+    """Best non-preprint (proceedings/journal) candidate that is the SAME paper.
+
+    Powers the 'cite the published version, not arXiv' recommendation. Guards
+    against title collisions (surveys/book-chapters that reuse a famous title)
+    by also requiring author overlap and rejecting non-version-of-record types."""
+    best, bscore = None, 0.0
+    for c in cands or []:
+        if not c or c.get("source") == "arxiv":
+            continue
+        venue = (c.get("venue") or "").strip()
+        pubtype = c.get("pubtype", "")
+        if not venue or _PREPRINT_VENUE.search(venue) or _PREPRINT_TYPE.search(pubtype):
+            continue
+        if _NOT_VOR_TYPE.search(pubtype):           # book chapter, survey, dataset, …
+            continue
+        ts = title_sim(bib_title, c.get("title", ""))
+        if ts < TITLE_AGREE:
+            continue
+        # same-paper guard: the published record must share authors with the preprint
+        if bib_authors and author_sim(bib_authors, c.get("authors", [])) < AUTHOR_MATCH:
+            continue
+        if ts > bscore:
+            best, bscore = c, ts
+    if not best:
+        return None
+    return {"venue": best["venue"], "year": best.get("year", ""),
+            "source": best["source"], "pubtype": best.get("pubtype", "")}
+
+
 def verify_entry(e, deadline_s, workers):
     title = e.get("title", "")
     doi = e.get("doi", "").strip()
     aid = arxiv_id_of(e)
     doi_is_arxiv = doi and "10.48550/arxiv" in doi.lower()
+    want_pub = bib_is_arxiv(e)  # gather venue info to find a published alternative
 
     tasks = []  # (callable -> candidate or list)
     if doi and not doi_is_arxiv:
@@ -444,13 +506,17 @@ def verify_entry(e, deadline_s, workers):
         return _result(e, "unable", None, [], ["No DOI, arXiv id, or title to look up."])
 
     results = []
+    all_cands = []  # every candidate seen (for published-version detection)
     deadline = time.monotonic() + deadline_s
 
     def run(fn):
         out = fn()
         if isinstance(out, list):
+            all_cands.extend(c for c in out if c)   # list.extend is atomic under the GIL
             c, _ = best_candidate(title, out)
             return c
+        if out:
+            all_cands.append(out)
         return out
 
     pool = cf.ThreadPoolExecutor(max_workers=min(workers, len(tasks)))
@@ -470,7 +536,10 @@ def verify_entry(e, deadline_s, workers):
                     c = None
                 if c and c.get("title"):
                     results.append(c)
-            if _corroborated(results):
+            # For preprint entries, keep gathering past corroboration so a
+            # published (proceedings/journal) candidate has a chance to arrive.
+            bib_authors = split_authors(e.get("author", ""))
+            if _corroborated(results) and not (want_pub and not published_alt(all_cands, title, bib_authors)):
                 break
     finally:
         for fut in futs:
@@ -502,7 +571,22 @@ def verify_entry(e, deadline_s, workers):
 
     verified = (agree_srcs and ts >= TITLE_MATCH) or (ts >= TITLE_MATCH and as_ >= AUTHOR_MATCH and yok)
     status = "verified" if verified else "mismatch"
-    return _result(e, status, primary, agree_srcs, issues, notes, conf)
+
+    # arXiv -> published recommendation (#cite the version of record, not the preprint)
+    pub_alt = None
+    if want_pub:
+        pub_alt = published_alt(all_cands, title, split_authors(e.get("author", "")))
+        jref = next((c.get("journal_ref") for c in all_cands
+                     if c.get("source") == "arxiv" and c.get("journal_ref")), "")
+        if jref and not pub_alt:
+            pub_alt = {"venue": jref, "year": "", "source": "arxiv:journal_ref", "pubtype": ""}
+        if pub_alt:
+            notes.append(f"Preprint has a published version — cite that instead: "
+                         f"{pub_alt['venue']}"
+                         + (f" ({pub_alt['year']})" if pub_alt['year'] else "")
+                         + f" [{pub_alt['source']}].")
+    return _result(e, status, primary, agree_srcs, issues, notes, conf,
+                   bib_is_arxiv=want_pub, published_alt=pub_alt)
 
 
 def _corroborated(results):
@@ -517,7 +601,8 @@ def _corroborated(results):
     return False
 
 
-def _result(e, status, primary, agree, issues, notes=None, conf=0.0):
+def _result(e, status, primary, agree, issues, notes=None, conf=0.0,
+            bib_is_arxiv=False, published_alt=None):
     return {
         "key": e.get("key", ""),
         "type": e.get("type", ""),
@@ -528,8 +613,11 @@ def _result(e, status, primary, agree, issues, notes=None, conf=0.0):
         "found_title": (primary or {}).get("title", ""),
         "found_year": (primary or {}).get("year", ""),
         "found_source": (primary or {}).get("source", ""),
+        "found_venue": (primary or {}).get("venue", ""),
         "corroborated_by": agree,
         "confidence": round(conf, 2),
+        "bib_is_arxiv": bib_is_arxiv,
+        "published_alt": published_alt,  # {venue,year,source} if a published version exists
         "issues": issues,
         "notes": notes or [],
     }
@@ -585,6 +673,7 @@ def _summary(results):
     s = {"verified": 0, "mismatch": 0, "unable": 0, "total": len(results)}
     for r in results:
         s[r["status"]] = s.get(r["status"], 0) + 1
+    s["arxiv_with_published"] = sum(1 for r in results if r.get("published_alt"))
     return s
 
 
@@ -605,6 +694,13 @@ def _print_human(results):
         print("\n❓ UNABLE to verify (web-search these yourself — may be new/blog/non-academic, or fake):")
         for r in by["unable"]:
             print(f"  - {r['key']}: '{r['bib_title'][:80]}' ({r['bib_year']}) — {'; '.join(r['issues'])}")
+    pub = [r for r in results if r.get("published_alt")]
+    if pub:
+        print("\n📄 arXiv preprint but a PUBLISHED version exists (cite that instead — web-confirm first):")
+        for r in pub:
+            pa = r["published_alt"]
+            print(f"  - {r['key']}: '{r['bib_title'][:70]}' -> "
+                  + pa["venue"] + (f" ({pa['year']})" if pa["year"] else "") + f" [{pa['source']}]")
     print(f"\n✓ {s['verified']} entries verified.", "" if not by["verified"]
           else "(corroboration notes in --json output)")
 

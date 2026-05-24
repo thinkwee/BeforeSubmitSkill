@@ -28,6 +28,15 @@ checked and what you couldn't.
 - **Degrade gracefully.** Every layer is independent. If TeX isn't installed,
   skip only the compile-based checks and say so. If offline, skip only the
   network checks and say so. Never fake a result you didn't actually run.
+- **pdflatex parity or skip — never substitute an engine.** The compile/page
+  check only runs on a TeX Live `pdflatex` toolchain (the Overleaf engine). If
+  there's none and the user declines installing the lightweight one, **skip
+  compiling and skip the page count** and say so in the report. Do **not** fall
+  back to Tectonic/XeTeX or any other engine (see Phase 5).
+- **Confirm every machine-flagged reference with the LLM + web.** `verify_refs.py`
+  is a fast first pass, not the verdict. Every entry it flags (`unable`,
+  `mismatch`, or "published version exists") must be re-checked by you with a
+  live web search before it lands in the report (see Phase 3).
 - **Ask before anything non-essential or hard to reverse.** Enforce hard
   requirements; for formatting/style optimizations and any file edits, propose
   and ask first (see Phase 6). Never run `sudo` silently. Never block on an
@@ -36,17 +45,24 @@ checked and what you couldn't.
   always overrides any generic rule in this skill (e.g. caption placement).
 - **Report what ran and what was skipped, with reasons.** The user trial-runs
   this; the first-run UX must be clean and trustworthy.
-- **Write findings to the report file as you go** (see next section) — never
+- **Write findings to your report fragment as you go** (see next section) — never
   hold them only in your head until the end.
 
 ## The running report — record findings the moment you find them
 
-Create **`before-submit-report.md`** (in the project root, or an output dir) at
-the very start of the run, and **append every confirmed finding immediately**,
-phase by phase — *not* only at the end. Rationale: a durable, ordered artifact
-that survives interruption and is the single source of truth for the Phase 6
-summary. Follow the template in `reference/report-format.md`. **Omit nothing** —
-every issue, with `file:line`, the problem, and a suggested fix, goes into the md.
+The final artifact is **`before-submit-report.md`** (project root or an output
+dir), following the template in `reference/report-format.md`. **Omit nothing** —
+every issue, with `file:line`, the problem, and a suggested fix, belongs in it.
+
+Because the audit runs as a **parallel agent team** (next section), the report is
+assembled from **fragment files** to avoid concurrent-write conflicts:
+- The orchestrator creates a work dir `before-submit-parts/` up front.
+- Each team member appends its confirmed findings *immediately, as it finds them*
+  to its **own** fragment (`before-submit-parts/<role>.md`) — never to a shared
+  file. This keeps the durable, survives-interruption property per worker.
+- In Phase 6 the orchestrator **merges** all fragments into
+  `before-submit-report.md`, grouped by severity. Each fragment uses the same
+  bullet format so merging is a concatenation + regroup, not a rewrite.
 
 ## Bundled files & paths (IMPORTANT)
 
@@ -76,10 +92,16 @@ which checks apply:
 4. **Fixing policy:** may I auto-apply *safe mechanical* fixes (e.g. `et al`→
    `et al.`, `50 %`→`50%`, add `~` before `\cite`), or propose every change as a
    diff for approval? Default: **propose diffs**, never edit without consent.
+5. **Compile for page count?** Detect whether a TeX Live `pdflatex` toolchain is
+   already on `PATH` (`pdflatex`/`latexmk`, incl. MacTeX/TinyTeX). If yes, plan to
+   use it. If **not**, ask: "install TinyTeX (the lightweight, Overleaf-identical
+   pdflatex; no sudo) so I can compile and check the page count, or skip the
+   compile-based checks?" Make clear the only alternative is **skip** — you will
+   **not** substitute another engine. Record the decision; it gates Phase 5.
 
-Then **detect the environment** (do not assume): locate the LaTeX project, and
-detect the TeX toolchain (see `reference/compile-checks.md` only when you reach
-Phase 5 — don't load it yet).
+Then **detect the environment** (do not assume): locate the LaTeX project, network
+availability, and (per item 5) the `pdflatex` toolchain. Load
+`reference/compile-checks.md` for the detection details only when you act on Phase 5.
 
 ## Phase 1 — Assemble the project
 
@@ -107,53 +129,106 @@ Read `reference/venue-rules.md` for the procedure. In short:
 3. Record the resolved rules (page limit, double-blind, mandatory sections,
    style file, caption convention, special deliverables) for later phases.
 
-## Phase 3 — Bibliography checks
+## Phase 2.5 — Dispatch the parallel audit team
+
+Phases 0–2 are **sequential setup** (run by you, the orchestrator): their outputs
+— version, venue rules, the assembled reading-order + bib list, the compile
+decision — feed everything downstream. Once they're done, the four audits below
+are **independent**, so run them as a **parallel agent team** instead of serially:
+launch them in a **single message with multiple `Agent` tool calls** (general-
+purpose subagents) so they execute concurrently.
+
+Give every subagent: the resolved **`SKILL_DIR`** (it starts fresh — it must read
+its own reference file by absolute path), the assembled `.tex`/`.bib` lists, the
+Phase-0 answers (version, fixing policy), the Phase-2 venue rules, and its
+fragment path. Each subagent **writes only to its own fragment** in
+`before-submit-parts/` (using the `reference/report-format.md` bullet format) and
+returns a short summary to you.
+
+| Member | Fragment | Does | Reads |
+|---|---|---|---|
+| **Bibliography auditor** | `bib.md` | Phase 3 | `reference/bib-checks.md` |
+| **LaTeX & writing auditor** | `latex.md` | Phase 4 §A–C, F (incl. grammar) | `reference/latex-checks.md` |
+| **Compliance auditor** | `compliance.md` | Phase 4 §D–E (anonymization + venue template) | `reference/latex-checks.md` |
+| **Compile auditor** | `compile.md` | Phase 5 — **only dispatched if** Phase 0 secured a `pdflatex` toolchain | `reference/compile-checks.md` |
+
+Notes:
+- If the compile decision was "skip", **don't** dispatch the compile auditor;
+  note the skip for Phase 6.
+- The Bibliography auditor's slowest work is web-confirming each flagged
+  reference (Phase 3). If there are many flagged entries, it may **further
+  fan out** — split the flagged list across parallel sub-auditors — to keep the
+  run fast.
+- You (orchestrator) stay free while they run; collect their fragments in Phase 6.
+
+The phase descriptions below are the **briefs** you hand to each member.
+
+## Phase 3 — Bibliography checks (Bibliography auditor)
 
 Read `reference/bib-checks.md` for the full list. Core:
-- **Existence / metadata** — run `python3 "$SKILL_DIR/scripts/verify_refs.py" <bibfiles>` first: it
-  does fast, parallel, multi-source verification (DOI/arXiv-id first, then title
-  search, with cross-source corroboration). For any entry it returns as
-  `unable`/unverified, **use your own web search** to confirm or refute it
-  (blogs, brand-new preprints, non-academic sources the script can't index).
-  Flag hallucinated / non-existent references loudly.
+- **Existence / metadata** — run `python3 "$SKILL_DIR/scripts/verify_refs.py" <bibfiles> --json`
+  first: fast, parallel, multi-source verification (DOI/arXiv-id first, then title
+  search, with cross-source corroboration). The script is a **triage pass, not a
+  verdict.** For **every** entry it flags — `unable`, `mismatch`, *or*
+  `published_alt` present — **you must run a live web search to confirm or
+  refute** before reporting (blogs, brand-new preprints, and the canonical
+  published venue are things the script can't fully settle). Flag truly
+  unfindable references loudly as likely hallucinated; correct genuine mismatches
+  with the verified metadata. Never report a machine flag you didn't confirm.
+- **Prefer the published version over arXiv** — for any entry citing an arXiv (or
+  other preprint), check whether a peer-reviewed version exists. The script
+  surfaces a candidate in `published_alt` (from the matched venue or the arXiv
+  `journal_ref`); **web-confirm it's the same paper**, then recommend replacing
+  the arXiv cite with the conference/journal version (give the venue + year).
+  Report unconfirmed-but-likely ones as a suggestion, not a hard error.
 - **Retractions** — entries with a DOI: flag retracted / withdrawn / concern.
 - **Usage** — unused `.bib` entries; `\cite` keys with no entry.
 - **Duplicates** — same paper under different keys (fuzzy title/author match).
 - **Required fields per entry type** (`@inproceedings`→booktitle/year, etc.).
 - **Preprint ratio**, **URL liveness** (optional).
 
-## Phase 4 — LaTeX quality checks
+## Phase 4 — LaTeX quality, writing & compliance (two auditors)
 
-Read `reference/latex-checks.md` for patterns, severities, and fixes. Run the
-structural/regex checks over the assembled document: captions (venue-aware),
-cross-references, formatting, equations, AI-text artifacts, sentence quality,
-terminology consistency, acronyms, number formatting, citation quality,
-anonymization (review version only), encoding/mojibake, and venue-template
-conformance (mandatory sections, `\section*` for non-page-counted sections,
-style file, page-size, double-blind). **Apply the venue overrides from Phase 2.**
+Read `reference/latex-checks.md` for patterns, severities, and fixes; **apply the
+venue overrides from Phase 2.** Split across two team members:
 
-## Phase 5 — Optional compile (only if useful and possible)
+- **LaTeX & writing auditor** (§A–C, F): captions (venue-aware), cross-references,
+  formatting, equations, AI-text artifacts, **grammar & sentence quality**
+  (subject–verb agreement, articles, tense, run-ons, misused/duplicated words —
+  see §B0), terminology consistency, acronyms, number formatting, citation
+  quality, encoding/mojibake.
+- **Compliance auditor** (§D–E): anonymization (**review version only**) and
+  venue-template conformance (mandatory sections, `\section*` for non-page-counted
+  sections, style file, page-size, double-blind, special deliverables).
 
-Read `reference/compile-checks.md`. Detect the TeX engine; if none and the user
-opts in, offer a lightweight install (Tectonic by default; TinyTeX for exact
-pdflatex parity) — otherwise **skip this phase and note it**. When you can
-compile, parse the `.log`/`.blg` for authoritative undefined references/
-citations, multiply-defined labels, overfull boxes, and estimate page count
-against the venue limit. Always annotate which engine compiled it and that
-XeTeX-based (Tectonic) page/font results are approximate vs Overleaf's pdflatex.
+## Phase 5 — Compile & page count (Compile auditor — pdflatex only, or skipped)
 
-## Phase 6 — Triage, report, and fix
+Read `reference/compile-checks.md`. Run this member **only if Phase 0 confirmed a
+TeX Live `pdflatex` toolchain** (already installed, or TinyTeX installed with the
+user's consent). If the user declined, this phase is **skipped entirely** — no
+compile, no page count — and Phase 6 must say so. **Never** substitute Tectonic/
+XeTeX/lualatex-as-a-fallback or any other engine to "get a number anyway."
 
-By now `before-submit-report.md` already holds every finding (you appended them
-as you went). Finalize it:
-- Confirm findings are grouped by severity — 🔴 **Desk-reject risk** (over page
-  limit, missing NeurIPS checklist, ACL missing Limitations, double-blind
-  identity leak, wrong style file, …) first and loudly; 🟠 **Reviewers will
-  frown** (writing, terminology, weak citations, broken cross-refs); 🔵
-  **Optional polish** (hedging, redundancy, hyphenation, …).
+When compiling, use the pdflatex toolchain (`latexmk -pdf`, or `pdflatex`+biber/
+bibtex passes), parse the `.log`/`.blg` for authoritative undefined references/
+citations, multiply-defined labels, overfull boxes, and compute the real page
+count against the venue limit. Annotate which engine + version compiled it.
+
+## Phase 6 — Merge, triage, report, and fix
+
+The team members have written their fragments to `before-submit-parts/`. Merge
+them into `before-submit-report.md`:
+- Concatenate the fragments and **regroup by severity** — 🔴 **Desk-reject risk**
+  (over page limit, missing NeurIPS checklist, ACL missing Limitations,
+  double-blind identity leak, wrong style file, …) first and loudly; 🟠
+  **Reviewers will frown** (writing, grammar, terminology, weak citations, broken
+  cross-refs, arXiv-instead-of-published); 🔵 **Optional polish** (hedging,
+  redundancy, hyphenation, …).
 - Fill the **summary** counts and the **"what I checked / what I skipped (and
-  why)"** section (e.g. "page count skipped: no TeX installed", "metadata: 3
-  entries unverified offline").
+  why)"** section — explicitly record any skips, especially **"compile + page
+  count skipped: no pdflatex toolchain (user declined TinyTeX install); install
+  TinyTeX or check page count on Overleaf"**, and e.g. "metadata: 3 entries
+  unverified offline".
 
 Then **offer the HTML view**: ask whether to render a minimal, self-contained
 HTML of the report. If yes, run

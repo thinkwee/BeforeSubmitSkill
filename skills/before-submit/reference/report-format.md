@@ -1,8 +1,21 @@
 # Running report format (`before-submit-report.md`)
 
-Create this file at the start of the run and **append findings as you confirm
-them**. The HTML step (`scripts/report_to_html.py`) renders exactly this file,
-so anything not in the md won't be shown — **put every issue here**.
+The audit runs as a parallel team, so findings land in **fragment files** first,
+then get merged:
+- Each team member appends findings to its **own** fragment as it confirms them —
+  `before-submit-parts/{bib,latex,compliance,compile}.md` — using the
+  one-finding-per-bullet format below (with severity tags). Appending as-you-go
+  keeps each worker's progress durable.
+- The orchestrator **merges** the fragments into the single
+  `before-submit-report.md` in Phase 6: concatenate, regroup every bullet under
+  the correct severity heading, then add the summary + "what I checked / skipped"
+  + venue sections.
+
+The HTML step (`scripts/report_to_html.py`) renders exactly the merged
+`before-submit-report.md`, so anything not in it won't be shown — **put every
+issue here**. So fragments don't need to be pre-grouped; the merge regroups them,
+but each bullet should carry enough context (which severity it belongs to) to
+sort. A simple convention: prefix each fragment bullet with `🔴`/`🟠`/`🔵`.
 
 ## Conventions
 
@@ -44,7 +57,8 @@ _Generated: <YYYY-MM-DD HH:MM> · Venue: <venue year, track> (rules: <live CfP |
 
 ## What I checked / skipped
 - ✅ <check> — ran
-- ⏭️ <check> — skipped: <reason (no TeX / offline / user opted out)>
+- ⏭️ Compile + page count — skipped: no pdflatex toolchain (user declined TinyTeX). Verify the page count on Overleaf, or install TinyTeX to enable it. (No engine substituted.)
+- ⏭️ <check> — skipped: <reason (offline / user opted out)>
 
 ## Venue rules used
 - Source: <live CfP url | built-in snapshot (as of YYYY)>

@@ -51,6 +51,28 @@ beats any default here (especially caption placement and `\section*` usage).
 
 ## B. Writing quality (all INFO unless noted — these are suggestions)
 
+### B0. Grammar & mechanics — severity: WARNING
+Real grammar mistakes (not style) make reviewers frown, so flag them at WARNING.
+Regex won't catch most grammar — **read the prose** (the assembled body text,
+skipping math/tabular/verbatim/`%`-comments) and flag concrete errors with the
+`file:line` and a corrected rewrite. Look for:
+- Subject–verb agreement ("the results shows", "these method").
+- Article errors (missing/extra/`a` vs `an`: "a important", "the most of").
+- Verb tense/form (inconsistent tense in a paragraph; "we have showed"; dangling
+  participles; "allows to" → "allows us to").
+- Run-on sentences and comma splices; sentence fragments.
+- Wrong/confusable words: its/it's, affect/effect, fewer/less, that/which,
+  compliment/complement, "comprised of", "the data is" (venue-dependent).
+- Duplicated words ("the the", "is is" across a line break), missing words.
+- Preposition/idiom errors common in non-native writing ("discuss about",
+  "research on the field", "in the literature is shown").
+- Punctuation: missing Oxford comma if the venue/house style wants it; stray
+  spaces before punctuation; `,` vs `.` in equations (defer to A4).
+Don't drown the report — group similar issues and prioritize ones that change
+meaning or read as errors. Fix: **ask-first** (it rewrites prose). A LanguageTool
+pass is *not* assumed available; do this by reading. Note non-native-fluency
+patterns kindly and concretely.
+
 ### B1. AI-generated text artifacts — severity: ERROR
 - Conversational AI residue: "Sure, here is…", "I'd be happy to", "As an AI
   (language) model", "my knowledge cutoff", "Here's the revised…", "Hope this
