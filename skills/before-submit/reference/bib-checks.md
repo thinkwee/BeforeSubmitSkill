@@ -10,6 +10,16 @@ the `.tex` first (`\%` is a literal percent, not a comment). A commented-out
 entry off the "unused" list, and a commented `\cite` to a non-existent key is
 **not** a missing-reference error (it never renders).
 
+**Two rules govern every check here.** (1) **Re-verify before reporting** —
+`verify_refs.py` is triage, never the verdict; re-check every entry it flags with a
+live web search (§1) before it ships, and sanity-check duplicate / missing-field
+calls against the actual entry text. Nothing is reported on a single machine flag.
+(2) **Quote the source** — every finding names its location *and* quotes the
+offending source verbatim in a `latex` block: the **raw `.bib` entry**
+(`bibfile:line`) for a metadata / existence / duplicate / missing-field problem, or
+the **`\cite{…}` line** (`texfile:line`) for a missing- or unused-citation problem,
+so the author sees exactly what to change.
+
 ## 1. Existence & metadata verification (the anti-hallucination check)
 
 **This is the highest-value check.** AI writing tools invent plausible-looking

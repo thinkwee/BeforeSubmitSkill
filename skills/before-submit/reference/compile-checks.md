@@ -69,6 +69,15 @@ From `<main>.log` (and `.blg` for the bibliography tool):
 Reconcile these with the Phase-3/4 regex results: the log is ground truth for
 undefined refs/citations and missing `.bib` entries.
 
+**Trust a log warning only after a complete multi-pass build** — a single
+truncated `pdflatex` pass emits spurious "undefined reference/citation" warnings
+that clear on the next pass; `latexmk` runs the right passes for you (§2), so drive
+the compile through it before believing an "undefined" finding. When you write a
+log-derived finding to the report, **cite the source `file:line` it points to and
+quote that line verbatim** in a `latex` block (the undefined `\ref`/`\cite`, the
+line that overflows the margin) — the author fixes the `.tex`, not the `.log`; the
+log message itself can ride along as evidence.
+
 ## 4. Missing packages & install (pdflatex only)
 
 - Once a TeX Live/TinyTeX install exists, parse the log for `File 'X.sty' not

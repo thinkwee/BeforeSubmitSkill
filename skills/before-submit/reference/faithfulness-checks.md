@@ -30,6 +30,19 @@ mismatch, rule out the innocent explanations:**
   the cells rather than expecting "2.1" to appear verbatim.
 - **Aggregates** — "on average 85%" is a mean over rows, not any single cell.
 
+**Read the LaTeX context on both sides before you flag — this is the second pass
+that turns a *suspected* mismatch into a *confirmed* one.** A bare
+number-vs-number comparison is only a lead. Open the **full sentence/paragraph**
+around the prose value *and* the **whole `table`/`figure` environment** the cell
+lives in, and read the *markup*, not just the digits: the column headers and row
+labels (including `\multicolumn` / `\multirow` spans and `\cmidrule` groupings)
+that say what each cell *means*; the `\caption` and any "(dev)", "(\%)", "± std"
+qualifiers; and any `\newcommand` / `\def` / `\input{numbers.tex}` macro that
+*stores or computes* the value (if the prose and the cell both expand the **same**
+macro they cannot disagree — don't flag them). Only when that context confirms the
+two name the **same** quantity and they **still** disagree beyond the tolerances
+above do you report it.
+
 When in genuine doubt, report it as a 🔵 *"please double-check"* with both
 locations and your reasoning, not a confident 🟠 error. **Every fix here is
 ask-first** — you can never know which side (prose or table) holds the typo, so
@@ -122,15 +135,37 @@ small table of "metric → value → location" as you read, and flag when:
 ## Reporting
 
 Use the standard fragment bullet format (`reference/report-format.md`), one
-finding per bullet, prefixed with its severity emoji, and **always cite both
-sides** of a mismatch so the author can adjudicate:
+finding per bullet, prefixed with its severity emoji, **always citing both sides**
+of a mismatch and **quoting the verbatim `.tex` of each side** in a `latex` block
+(labelled with a `% <file>:<line>` comment), so the author can see and adjudicate
+without hunting:
 
-```
-- 🟠 **results.tex:212 ↔ tables/main.tex:40 (Table 3)** — text claims "92.3 F1" but the Full-model row shows 91.3. _Fix:_ reconcile — confirm which is correct and update the other.
+````
+- 🟠 **results.tex:212 ↔ tables/main.tex:40 (Table 3)** — text claims "92.3 F1" but the Full-model row shows 91.3. _Fix:_ reconcile — confirm which is right, update the other.
+  ```latex
+  % results.tex:212
+  our full model attains \textbf{92.3} F1 on the test set,
+  % tables/main.tex:40
+  Full model & 88.7 & 91.3 \\
+  ```
 - 🟠 **tables/abl.tex:18 (Table 5)** — "best" is bolded on BERT (88.1) but RoBERTa (89.4) is higher in that column. _Fix:_ move the bold to the true max, or correct the value.
+  ```latex
+  BERT    & \textbf{88.1} \\
+  RoBERTa & 89.4 \\
+  ```
 - 🟠 **analysis.tex:77 ↔ figures/scaling.pdf (Figure 4)** — text says accuracy "increases monotonically with size" but the plotted curve dips at 13B. _Fix:_ soften the claim or check the figure.
+  ```latex
+  % analysis.tex:77 (the figure is read with the Read tool — not quotable here)
+  Accuracy increases monotonically with model size (Figure~\ref{fig:scaling}).
+  ```
 - 🔵 **intro.tex:9 ↔ exp.tex:140** — abstract says "3-point gain", results table gives 2.6 (rounds to 3?). _Fix:_ please double-check the rounding/claim.
-```
+  ```latex
+  % intro.tex:9
+  ... yielding a \textbf{3-point} gain over the strongest baseline.
+  % exp.tex:140
+  ... an improvement of 2.6 points over the baseline.
+  ```
+````
 
 Record what you **couldn't** verify (EPS figures, unreadable plots, ambiguous
 metric matches) in the Phase-6 "what I checked / skipped" section — honesty about

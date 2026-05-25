@@ -34,6 +34,15 @@ The checks split into two kinds and the difference is the whole game:
 So when a check below says "Detect … pattern", that's the cheap first pass for a
 mechanical check; for a semantic one the real work is your reading.
 
+**Two rules for every check below.** (1) **Re-confirm before you report** — a
+regex hit or a first impression is a lead, not a verdict; re-open the flagged span
+and verify the issue is real *in its context* (not math / tabular / verbatim /
+comment, not a `\%` or a macro argument, not a valid stylistic choice). Nothing
+ships on a single detection. (2) **Quote the source** — every line-specific finding
+pairs its `file:line` with a verbatim quote of the offending `.tex` in a fenced
+`latex` block (per `reference/report-format.md`), so the author sees exactly what
+you mean.
+
 ---
 
 ## A. Format

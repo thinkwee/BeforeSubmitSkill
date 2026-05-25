@@ -57,7 +57,9 @@ decides.
 **Internal faithfulness** (the paper checked against itself)
 - 🔢 **Numbers match the tables** — numeric claims in the prose/abstract are
   cross-checked against the actual `tabular` cells (with rounding/subset/metric
-  tolerances so it doesn't cry wolf); a wrong *headline* number is escalated.
+  tolerances, and the surrounding LaTeX — headers, row labels, shared macros — read
+  to tell a real mismatch from an apparent one, so it doesn't cry wolf); a wrong
+  *headline* number is escalated.
 - 📊 **Tables are self-consistent** — the bolded "best" really is the best,
   totals add up, ablation deltas are right.
 - 🖼️ **Figures match the prose** — it **reads the figure files** (PNG/JPG/PDF)
@@ -84,9 +86,13 @@ count vs Overleaf.
 
 The checks run as a **parallel agent team** (bibliography · LaTeX & writing ·
 compliance · faithfulness · compile), each writing its own report fragment, which
-are then merged. Findings land in **`before-submit-report.md`**, grouped into 🔴 desk-reject
-risk · 🟠 reviewers will frown · 🔵 optional polish — and you can render a minimal,
-self-contained **HTML** view of it.
+are then merged. **Nothing is reported on a single detection** — every flagged item
+gets an independent second check in context first (a live web search for a
+reference, a re-read of both sides for a number/figure mismatch, a second look for
+a grammar call). Findings land in **`before-submit-report.md`**, grouped into 🔴
+desk-reject risk · 🟠 reviewers will frown · 🔵 optional polish, **each pinned to
+its `file:line` and quoting the exact `.tex` source** — and you can render a
+minimal, self-contained **HTML** view of it.
 
 ---
 

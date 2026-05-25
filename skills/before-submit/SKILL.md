@@ -57,10 +57,20 @@ checked and what you couldn't.
   there's none and the user declines installing the lightweight one, **skip
   compiling and skip the page count** and say so in the report. Do **not** fall
   back to Tectonic/XeTeX or any other engine (see Phase 5).
-- **Confirm every machine-flagged reference with the LLM + web.** `verify_refs.py`
-  is a fast first pass, not the verdict. Every entry it flags (`unable`,
-  `mismatch`, or "published version exists") must be re-checked by you with a
-  live web search before it lands in the report (see Phase 3).
+- **Re-verify every finding before it ships — nothing is reported on a single
+  detection.** A first-pass hit (a regex match, a `verify_refs.py` flag, a number
+  that looks off, a first read of a sentence) is a *lead*, not a verdict. Run an
+  independent **second check, in context,** before any finding lands in a fragment:
+  for **mechanical** issues, re-open the exact source span and rule out a
+  false-positive context (math / tabular / verbatim / `%`-comment, a `\%`, a minus
+  sign, a macro argument); for **semantic** ones (grammar, terminology, citation
+  fit, faithfulness), re-read the surrounding text and confirm a reader would see a
+  real error, not a valid choice or your misread; for **references**, every entry
+  `verify_refs.py` flags (`unable`, `mismatch`, or a `published_alt`) gets a **live
+  web search** to confirm or refute it (see Phase 3); for **figure/table number
+  mismatches**, re-read the LaTeX on *both* sides to confirm they name the same
+  quantity and truly disagree (see Phase 4.5). If the second check doesn't confirm
+  it, drop it or downgrade to a 🔵 "please double-check" — never a confident error.
 - **Ask before anything non-essential or hard to reverse.** Enforce hard
   requirements; for formatting/style optimizations and any file edits, propose
   and ask first (see Phase 6). Never run `sudo` silently. Never block on an
@@ -76,7 +86,10 @@ checked and what you couldn't.
 
 The final artifact is **`before-submit-report.md`** (project root or an output
 dir), following the template in `reference/report-format.md`. **Omit nothing** —
-every issue, with `file:line`, the problem, and a suggested fix, belongs in it.
+every issue belongs in it, and every line-specific finding carries four things:
+its `file:line`, the problem, a **verbatim quote of the offending `.tex` source**
+(in a fenced `latex` code block, formatting preserved), and a suggested fix — so
+the author can jump to the exact spot and see precisely what was flagged.
 
 Because the audit runs as a **parallel agent team** (next section), the report is
 assembled from **fragment files** to avoid concurrent-write conflicts:
@@ -176,9 +189,13 @@ recency check), the assembled `.tex`/`.bib` lists, the Phase-0 answers (version,
 fixing policy), the Phase-2 venue rules, the **ignore-commented-out-LaTeX rule**
 from the operating principles above (so each fresh subagent skips `%`-comments and
 commented-out blocks — except the anonymization auditor, which inspects comments
-for leaks), and its fragment path. Each subagent **writes only to its own fragment** in
-`before-submit-parts/` (using the `reference/report-format.md` bullet format) and
-returns a short summary to you.
+for leaks), the **re-verify-before-reporting rule** (no finding ships on a single
+detection — each gets an independent second check, in context, first; per the
+operating principle above), the **quote-the-source rule** (every line-specific
+finding includes a verbatim quote of the offending `.tex` in a fenced `latex`
+block, per `reference/report-format.md`), and its fragment path. Each subagent
+**writes only to its own fragment** in `before-submit-parts/` (using the
+`reference/report-format.md` bullet format) and returns a short summary to you.
 
 | Member | Fragment | Does | Reads |
 |---|---|---|---|
@@ -255,8 +272,15 @@ reviewer catches:
 - **The same quantity is consistent across sections**, and claims point to the
   right float/appendix.
 Every fix here is **ask-first** (you can't know which side holds the typo —
-surface both `file:line`s). Note unreadable figures / ambiguous matches for the
-Phase-6 "what I checked / skipped" section.
+surface both `file:line`s, quoting the verbatim `.tex` of each). **Before flagging
+any number/figure/table mismatch, read the LaTeX context on both sides** — the
+full sentence/paragraph around the prose value *and* the whole `table`/`figure`
+environment (column headers, row / `\multicolumn` / `\multirow` labels, the
+`\caption`, and any macro that computes the value) — and confirm the two genuinely
+name the *same* quantity and *still* disagree; many "mismatches" dissolve once you
+see they're different splits, a shared macro, or a delta vs an absolute. Note
+unreadable figures / ambiguous matches for the Phase-6 "what I checked / skipped"
+section.
 
 ## Phase 5 — Compile & page count (Compile auditor — pdflatex only, or skipped)
 

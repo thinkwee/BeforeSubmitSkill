@@ -19,8 +19,27 @@ sort. A simple convention: prefix each fragment bullet with `🔴`/`🟠`/`🔵`
 
 ## Conventions
 
-- One finding = one bullet: `` - **<file>:<line>** — <problem>. _Fix:_ <suggestion> ``
-  (omit `:line` when not line-specific, e.g. a whole-bib or page-count issue).
+- One finding = one bullet, immediately followed by a verbatim quote of the
+  offending source. The shape:
+
+  ````
+  - **<file>:<line>** — <problem>. _Fix:_ <suggestion>
+    ```latex
+    <the exact .tex source line(s), copied verbatim — formatting preserved>
+    ```
+  ````
+
+  - **Always quote the raw `.tex`** for a line-specific finding, in a fenced
+    `latex` code block directly under the bullet. Copy it **verbatim** (backslashes,
+    braces, `%`, `&`, `$`, and all) — never paraphrase, re-indent, or "tidy it up";
+    the author has to recognize and locate the exact text. Quote only the relevant
+    line(s): a row or two of a long table, the one offending sentence — not a whole
+    page.
+  - **Omit** the `:line` *and* the quote only when a finding isn't line-specific (a
+    whole-bib summary, the page-count verdict, a missing mandatory section).
+  - For a **two-sided** finding (text ↔ table, abstract ↔ results), cite both
+    `file:line`s and quote **each** side in its own `latex` block (label each with a
+    `% <file>:<line>` comment) so the author sees both without hunting.
 - Group by severity using these exact headings (emoji included) so the HTML can
   style them: `## 🔴 Desk-reject risk`, `## 🟠 Reviewers will frown`,
   `## 🔵 Optional polish`.
@@ -33,7 +52,7 @@ sort. A simple convention: prefix each fragment bullet with `🔴`/`🟠`/`🔵`
 
 ## Skeleton
 
-```markdown
+````markdown
 # Before-Submit Report — <main.tex / paper title>
 
 _Generated: <YYYY-MM-DD HH:MM> · Venue: <venue year, track> (rules: <live CfP | snapshot YYYY>) · Version: <review | camera-ready>_
@@ -46,14 +65,26 @@ _Generated: <YYYY-MM-DD HH:MM> · Venue: <venue year, track> (rules: <live CfP |
 ## 🔴 Desk-reject risk
 ### <check>
 - **<file>:<line>** — <problem>. _Fix:_ <suggestion>
+  ```latex
+  <verbatim offending source>
+  ```
 
 ## 🟠 Reviewers will frown
 ### <check>
-- **<file>:<line>** — <problem>. _Fix:_ <suggestion>
+- **<fileA>:<line> ↔ <fileB>:<line>** — <two-sided problem>. _Fix:_ <suggestion>
+  ```latex
+  % <fileA>:<line>
+  <verbatim source, side A>
+  % <fileB>:<line>
+  <verbatim source, side B>
+  ```
 
 ## 🔵 Optional polish
 ### <check>
 - **<file>:<line>** — <problem>. _Fix:_ <suggestion>
+  ```latex
+  <verbatim offending source>
+  ```
 
 ## What I checked / skipped
 - ✅ <check> — ran
@@ -64,8 +95,10 @@ _Generated: <YYYY-MM-DD HH:MM> · Venue: <venue year, track> (rules: <live CfP |
 - Source: <live CfP url | built-in snapshot (as of YYYY)>
 - Page limit: <…> · Double-blind: <…> · Mandatory: <…>
 - ⚠️ <if snapshot> Verify against the official CfP: <url>
-```
+````
 
 The converter supports headings (#/##/###), bullet lists, **bold**, _italic_,
-`inline code`, [links](url), `---` rules, blockquotes, and simple pipe tables —
-stick to those so the HTML renders cleanly.
+`inline code`, **fenced code blocks** (triple-backtick — used for the verbatim
+`.tex` quotes; rendered literally as a `<pre>`, so LaTeX backticks / `&` / `%` are
+safe inside them), [links](url), `---` rules, blockquotes, and simple pipe tables
+— stick to those so the HTML renders cleanly.
