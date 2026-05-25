@@ -9,6 +9,11 @@ silently survives a clean compile.
 
 Operate on the **assembled** document (Phase 1) so body **and appendix** are in
 scope — a number in the appendix table must still match the abstract's headline.
+**Skip all commented-out LaTeX first** (`%`-comments respecting `\%`, and
+commented-out blocks like `\begin{comment}…\end{comment}` / `\iffalse…\fi`): never
+extract a numeric claim, table cell, figure, or `\includegraphics` from a
+commented-out region — an old/commented number is not the paper's number and must
+not be treated as a mismatch or a stale figure.
 
 ## Cardinal rule: tolerate, don't cry wolf
 

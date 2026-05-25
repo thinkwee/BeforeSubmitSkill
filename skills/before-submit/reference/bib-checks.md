@@ -3,6 +3,13 @@
 Operate on the parsed `.bib` entries (there may be several files — Phase 1
 resolved them) and the citation keys actually used in the assembled `.tex`.
 
+**Ignore commented-out LaTeX when collecting `\cite` usage.** Strip `%`-comments
+and commented-out blocks (`\begin{comment}…\end{comment}`, `\iffalse…\fi`) from
+the `.tex` first (`\%` is a literal percent, not a comment). A commented-out
+`\cite{key}` does **not** count as a use — so it must not keep an otherwise-unused
+entry off the "unused" list, and a commented `\cite` to a non-existent key is
+**not** a missing-reference error (it never renders).
+
 ## 1. Existence & metadata verification (the anti-hallucination check)
 
 **This is the highest-value check.** AI writing tools invent plausible-looking

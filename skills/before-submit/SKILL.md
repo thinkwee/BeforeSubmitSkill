@@ -28,6 +28,19 @@ checked and what you couldn't.
 
 - **Detect, never assume.** Probe the environment at runtime (files, TeX engine,
   network). The user may be on any OS, with any/no TeX install, online or off.
+- **Ignore commented-out LaTeX — it isn't in the paper.** Anything a TeX compiler
+  discards is out of scope for every check: text after an unescaped `%` through
+  end of line (but `\%` is a literal percent sign, *not* a comment), fully
+  `%`-commented lines, and commented-out **blocks** (`\begin{comment}…\end{comment}`,
+  `\iffalse…\fi`, a `\comment{}` macro). Never flag, count, or report something
+  that exists only inside a comment — a commented-out `\cite`, figure, table,
+  number, paragraph, or `\input` is invisible to the reader and therefore cannot
+  be an error, an unused/missing reference, or a faithfulness mismatch. Strip
+  comments (the way `assemble_project.py` does) before reasoning about content.
+  **One deliberate exception:** the anonymization check (latex `reference` §D1)
+  looks *into* comments on purpose, because commented author names / identity
+  URLs / acknowledgments can still leak from the shipped source — that check
+  flags them; nothing else does.
 - **Anchor to the real current date; never trust your training cutoff for
   time-sensitive facts.** Establish today's date from the system clock at the
   start (Phase 0), then treat **every** date-dependent judgment — is this CfP/page
@@ -160,7 +173,10 @@ Give every subagent: the resolved **`SKILL_DIR`** (it starts fresh — it must r
 its own reference file by absolute path), **today's date** (from the Phase-0
 `date` call — they start fresh and cannot trust their own training cutoff for any
 recency check), the assembled `.tex`/`.bib` lists, the Phase-0 answers (version,
-fixing policy), the Phase-2 venue rules, and its fragment path. Each subagent **writes only to its own fragment** in
+fixing policy), the Phase-2 venue rules, the **ignore-commented-out-LaTeX rule**
+from the operating principles above (so each fresh subagent skips `%`-comments and
+commented-out blocks — except the anonymization auditor, which inspects comments
+for leaks), and its fragment path. Each subagent **writes only to its own fragment** in
 `before-submit-parts/` (using the `reference/report-format.md` bullet format) and
 returns a short summary to you.
 

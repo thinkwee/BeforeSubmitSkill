@@ -1,10 +1,14 @@
 # LaTeX Quality Checks (Phase 4)
 
-Run these over the **assembled** document (Phase 1), skipping commented lines
-(`%`, respecting `\%`) and verbatim/listing environments. Each check lists: what
-it flags, how to detect it, severity, the fix, and whether the fix is
-**safe-auto** (mechanical, apply after the Phase-0 consent) or **ask-first**
-(stylistic/subjective — always propose, never impose).
+Run these over the **assembled** document (Phase 1), skipping **all commented-out
+LaTeX** — text after an unescaped `%` (respecting `\%`), fully `%`-commented lines,
+and commented-out blocks (`\begin{comment}…\end{comment}`, `\iffalse…\fi`) — plus
+verbatim/listing environments. Commented-out content is invisible to the reader,
+so it is never an error here. (**Exception:** §D1 anonymization deliberately
+inspects comments for identity leaks; that is the only check that looks inside
+them.) Each check lists: what it flags, how to detect it, severity, the fix, and
+whether the fix is **safe-auto** (mechanical, apply after the Phase-0 consent) or
+**ask-first** (stylistic/subjective — always propose, never impose).
 
 **Apply venue overrides from Phase 2 before reporting** — a fetched venue rule
 beats any default here (especially caption placement and `\section*` usage).
