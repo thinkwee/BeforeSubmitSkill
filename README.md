@@ -103,7 +103,7 @@ minimal, self-contained **HTML** view of it.
 In Claude Code:
 
 ```
-/plugin marketplace add thinkwee/BeforeSubmitSkill
+/plugin marketplace add thinkwee/claude-plugins
 /plugin install before-submit@thinkwee
 ```
 

@@ -59,7 +59,7 @@
 在 Claude Code 中运行：
 
 ```text
-/plugin marketplace add thinkwee/BeforeSubmitSkill
+/plugin marketplace add thinkwee/claude-plugins
 /plugin install before-submit@thinkwee
 ```
 
